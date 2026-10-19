@@ -4,21 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mindex.challenge.dao.EmployeeRepository;
 import com.mindex.challenge.data.Employee;
 import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 @Component
+@RequiredArgsConstructor
 public class DataBootstrap {
     private static final String DATASTORE_LOCATION = "/static/employee_database.json";
 
-    @Autowired
-    private EmployeeRepository employeeRepository;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final EmployeeRepository employeeRepository;
+    private final ObjectMapper objectMapper;
 
     @PostConstruct
     public void init() {
