@@ -234,9 +234,12 @@ compensation history, newest `effectiveDate` first.
 Integration tests create their own employees so they never modify the seed data other tests rely on.
 
 ### Known Limitations
-- **Duplicate-date check race.** The 409 check reads before it inserts, so two identical requests arriving at the same
-  moment could both succeed. A unique index on (`employeeId`, `effectiveDate`) would close this at the database
-  level; it was not added because enforcement by the in-memory `mongo-java-server` is unverified.
+- **Concurrent compensation creates.** `POST /employee/{id}/compensation` checks for an existing record with the same
+  `effectiveDate` and then inserts as a separate step, so two identical compensation requests arriving at the same
+  moment could both succeed and leave two records for one date. A unique index on (`employeeId`, `effectiveDate`)
+  would close this at the database level; it was not added because enforcement by the in-memory `mongo-java-server`
+  is unverified. This does not affect employees: `employeeId` is the document id, which Mongo keeps unique, so
+  concurrent `PUT /employee/{id}` requests cannot create duplicate employees (the last write wins).
 - **No authorization.** Compensation data is sensitive and would normally be restricted to authorized users.
 
 ## Delivery
