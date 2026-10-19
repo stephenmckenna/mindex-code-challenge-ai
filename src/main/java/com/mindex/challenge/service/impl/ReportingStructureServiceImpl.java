@@ -27,13 +27,23 @@ public class ReportingStructureServiceImpl implements ReportingStructureService 
     public ReportingStructure read(String employeeId) {
         LOG.debug("Computing reporting structure for employee id [{}]", employeeId);
 
+        // Get information about the employee in question
         Employee employee = employeeService.read(employeeId);
 
         Set<String> visited = new HashSet<>();
+
+        // Add current employee to the list of already-considered-in-this-count employees
         visited.add(employeeId);
         int numberOfReports = 0;
 
+        // Store the next level of the tree
         List<String> frontier = directReportIds(employee);
+
+        /*
+            Navigate through each level of the tree, so long as a next level exists (!frontier.isEmpty() check)
+
+            Utilizing this loop instead of recursion to limit the amount of API calls completed during computation.
+         */
         while (!frontier.isEmpty()) {
             List<String> toFetch = new ArrayList<>();
             for (String id : frontier) {
@@ -55,6 +65,7 @@ public class ReportingStructureServiceImpl implements ReportingStructureService 
                         .forEach(id -> LOG.warn("Direct report [{}] under [{}] does not exist; skipping", id, employeeId));
             }
 
+            // Increment the number of reports found in this level of the tree
             numberOfReports += reports.size();
             frontier = reports.stream()
                     .flatMap(report -> directReportIds(report).stream())
