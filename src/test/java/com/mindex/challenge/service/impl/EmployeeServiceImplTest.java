@@ -1,6 +1,7 @@
 package com.mindex.challenge.service.impl;
 
 import com.mindex.challenge.data.Employee;
+import com.mindex.challenge.exception.EmployeeNotFoundException;
 import com.mindex.challenge.service.EmployeeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class EmployeeServiceImplTest {
@@ -72,6 +75,43 @@ public class EmployeeServiceImplTest {
                         readEmployee.getEmployeeId()).getBody();
 
         assertEmployeeEquivalence(readEmployee, updatedEmployee);
+    }
+
+    @Test
+    public void testCreateAssignsNewIdIgnoringClientId() {
+        Employee testEmployee = Employee.builder()
+                .employeeId("client-chosen-id")
+                .firstName("Jane")
+                .lastName("Doe")
+                .build();
+
+        Employee createdEmployee = employeeService.create(testEmployee);
+
+        assertNotNull(createdEmployee.getEmployeeId());
+        assertNotEquals("client-chosen-id", createdEmployee.getEmployeeId());
+        assertEmployeeEquivalence(testEmployee, employeeService.read(createdEmployee.getEmployeeId()));
+    }
+
+    @Test
+    public void testReadUnknownIdThrowsNotFound() {
+        EmployeeNotFoundException exception =
+                assertThrows(EmployeeNotFoundException.class, () -> employeeService.read("does-not-exist"));
+
+        assertEquals("Invalid employeeId: does-not-exist", exception.getMessage());
+    }
+
+    @Test
+    public void testUpdatePersistsChanges() {
+        Employee createdEmployee = employeeService.create(Employee.builder()
+                .firstName("Jane")
+                .lastName("Doe")
+                .position("Developer")
+                .build());
+
+        createdEmployee.setPosition("Development Manager");
+        employeeService.update(createdEmployee);
+
+        assertEquals("Development Manager", employeeService.read(createdEmployee.getEmployeeId()).getPosition());
     }
 
     private static void assertEmployeeEquivalence(Employee expected, Employee actual) {
